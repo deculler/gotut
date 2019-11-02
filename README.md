@@ -10,7 +10,10 @@ This tutorial is intended to introduce you to Go from the perspects of systems p
 ## Getting Started - cmdln1
 
 Our first example deals with command line arguments and illustrates some basic concepts in Go.  
-It can be found in [src/cmdln1/](https://deculler.github.io/gotut/cmdln1/src/)
+It can be found in [src/cmdln1/](https://github.com/deculler/gotut/src/cmdln1).  You
+can run it by `cd` to that directory and `go 
+
+
 
 The process of building Go applications uses a set of file system conventions 
 a Makefile.  It treats a directory in your file system as *a workspace*.
