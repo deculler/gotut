@@ -11,16 +11,19 @@ import ("os"
 
 func main() {
 	argv := os.Args    // Args is in the os package
-	argc := len(argv)  // argc is not special 
+	var argc int = len(argv)  // argc is not special 
 	// argv is a slice of an array of strings.
 	// They are typed, with length and capacity
+
 	fmt.Printf("ArgC: %d, Cmd: %s, argv type: %T and capacity: %d\n", argc,  argv[0],
 		argv, cap(argv))
-	// idomatic iteration in Go is to use range, either index or val can be _
-	for i,v := range argv {
+
+	// idiomatic iteration in Go is to use range, either index or val can be _
+	for i, v := range argv[1:] {
 		fmt.Printf("argv[%d] = %s (%T)\n", i, v, v)
 	}
 
+	// the 3-expression for construct has ; but no enclosing ()
 	for i := 0; i < argc; i++ {
 		fmt.Printf("argv[%d] = %s\n", i, argv[i])
 	}
