@@ -2,6 +2,26 @@
 
 [https://deculler.github.io/gotut/](https://deculler.github.io/gotut/)
 
+https://golang.org/doc/
+
+
+This tutorial is intended to introduce you to Go from the perspects of systems programming in C.
+
+## Getting Started
+
+The process of building Go applications uses a set of file system conventions 
+a Makefile.  It treats a directory in your file system as *a workspace*.
+
+
+The environment variable `$GOPATH` is set to yoiur current workspace. It
+is assumed to contains subdirectories:
+
+* `$GOPATH/src` contains Go source files.  Conventionally, each application is in
+a directory there
+* `$GOPATH/bin` contains executables
+
+Our first example is in `$GOPATH/src/cmdline1`
+
 
 
 
