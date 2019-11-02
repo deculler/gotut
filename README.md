@@ -10,10 +10,42 @@ This tutorial is intended to introduce you to Go from the perspects of systems p
 ## Getting Started - cmdln1
 
 Our first example deals with command line arguments and illustrates some basic concepts in Go.  
-It can be found in [src/cmdln1/](https://deculler.github.io/gotut/cmdln1/src/)
+It can be found in [src/cmdln1/](https://github.com/deculler/gotut/tree/master/src/cmdln1).
 
-The process of building Go applications uses a set of file system conventions 
-a Makefile.  It treats a directory in your file system as *a workspace*.
+Although Go is a compiled language, rather than `cc` and `Makefiles`
+the process of building Go applications uses a set of file system conventions
+and the `go` utility.  To run this example, `cd` to the `cmdln1` directory
+and `go run main.go`.  Or you can build the executable with `go build`.
+Notice that it is `./cmdln1` in the current directory - taking its name from
+the source directory, not the main file.
+
+### Packages
+
+A Go program is made up of *packages*.  They define the namespace of
+program modules.  By convention, the package name is the same as the
+last element of the import path.  The package `main` is important only
+so far as it defines the function that will be called to start the program,
+`main.main`.
+
+Every package that is used by the program is explicitly imported
+using the `import` statement.  This replaces the `#include`s of your C
+program.  There is no separation of `.h` files for signatures and types
+from `.c` files for implementation - every package is defined by
+the set of files that declare it.  Each source file declares THE
+package which contributes to.
+
+In Go, a name is exported from a package if it begins with a capital letter.
+Command line argument strings are not defined in the signature of `main`;
+instead the equivalent of `argv` is exported by the `os` package.
+The analog of `stdio.h` is the `fmt` package, which exports the
+`Printf` function used here.
+
+
+
+
+
+
+It treats a directory in your file system as *a workspace*.
 
 
 The environment variable `$GOPATH` is set to yoiur current workspace. It
@@ -23,7 +55,6 @@ is assumed to contains subdirectories:
 a directory there
 * `$GOPATH/bin` contains executables
 
-Our first example is in `$GOPATH/src/cmdline1`
 
 
 
@@ -32,15 +63,9 @@ Our first example is in `$GOPATH/src/cmdline1`
 
 
 
-
-
-You can use the [editor on GitHub](https://github.com/deculler/gotut/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
 ### Markdown
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
 
 ```markdown
 Syntax highlighted code block
@@ -56,16 +81,5 @@ Syntax highlighted code block
 2. List
 
 **Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
 ```
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/deculler/gotut/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
