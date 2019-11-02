@@ -156,6 +156,24 @@ for <cond>  { ... }
 
 Conditionals and switch statements follow a similar reductionist approach as iteration.
 
+### Go, make, and GOPATH
+
+Whereas in typical C development we have a Makefile to define how we build
+and deploy and executible, Go employs a set of conventions in the use of the
+file system.
+
+Go treats a directory in your file system as *a workspace*.
+The environment variable `$GOPATH` is set to yoiur current workspace. It
+is assumed to contains subdirectories:
+
+* `$GOPATH/src` contains Go source files.  Conventionally, each application is in
+a directory there
+* `$GOPATH/bin` contains executables
+
+`go install` will build the current command package and install its executable in `bin`.  You
+can add that to your `PATH` if you want to run what you build. `go clean` does what you'd
+expect.
+
 
 
 
@@ -185,15 +203,7 @@ assigns a boolean to the second LHS of the type match.
 
 
 
-It treats a directory in your file system as *a workspace*.
 
-
-The environment variable `$GOPATH` is set to yoiur current workspace. It
-is assumed to contains subdirectories:
-
-* `$GOPATH/src` contains Go source files.  Conventionally, each application is in
-a directory there
-* `$GOPATH/bin` contains executables
 
 
 
