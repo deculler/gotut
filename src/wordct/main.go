@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"fmt"
 	"wc"
 )
 
@@ -60,6 +59,5 @@ func main() {
 			}
 		}
 	}
-	fmt.Println("main done")
 	wordcounts.Print()
 }

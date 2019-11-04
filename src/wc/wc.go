@@ -19,9 +19,7 @@ type WordCount struct {
 }
 
 func (wc *WordCount) AddCount(val int) {
-	fmt.Println("AC", wc, val)
 	(*wc).Count +=  val
-	fmt.Println("AC", wc)	
 }
 
 func (wc *WordCount) Inc() {
@@ -47,9 +45,10 @@ func (wcounts *WordCounts) Print() {
 }
 
 func (wcounts *WordCounts) Find(word string) *WordCount {
-	for _, wc := range wcounts.wcs {
+	for i := 0; i < len(wcounts.wcs); i++ {
+		var wc *WordCount = &(wcounts.wcs[i])
 		if strings.Compare(wc.Word, word) == 0 {
-			return &wc
+			return wc
 		}
 	}
 	return nil
