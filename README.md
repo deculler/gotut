@@ -145,7 +145,8 @@ its capacity.
 
 ### Iteration
 
-The first loop in our example shows the Go idiomatic form of iteration,
+The first loop in our example shows the Go idiomatic form of iteration
+over slices, arrays and maps,
 binding the index and value to each of the elements of a sequence.  For just
 the values this would be `for _, v := range argv { ... }`
 
@@ -163,6 +164,10 @@ in the init statement.  We have used the short form.  It could have been
 ```
 for var i = 0; i < argc; i++ { ... }
 ```
+or
+```
+for i := 0; i < argc; i++ { ... }
+```
 While loops have the condition but no init or post.  This can be expressed as
 ```
 for ; <cond> ; { ... }
@@ -171,6 +176,9 @@ or more idiomatically as the concise
 ```
 for <cond>  { ... }
 ```
+Declaring the iteration variable in the `for` initializer keeps its
+scope local to the for block.  This is one reason that loops which are
+otherwise natural as a "while" may utilize the `for` more fully.
 
 Conditionals and switch statements follow a similar reductionist approach as iteration.
 
@@ -256,7 +264,7 @@ routine practice to declare variables in the scope of blocks, such as
 `flag.BoolVar` to set its value, since we have passed a reference.
 
 Another example is the p[`log`](https://golang.org/pkg/log/) package.
-Here we only use its printing functionality, while it exports a range
+Here we only use its printing functionality, while it exports a collection
 of other methods relevant to captuting information that may be valuable
 in diagnosing a problem.
 
@@ -327,13 +335,8 @@ Its declaration defines the functionality it relies upon in the underlying type.
 Types in Go do not explicitly "implement" an interface. They do so implicitly, simply
 by implementing all the methods in the interface type with the appropriate signatures.
 
-
-
-
-
-
-
-
+Having something of an interface type does not tell you what it is, it tells
+you what it can do.
 
 ## more stuff
 
