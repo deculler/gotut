@@ -253,7 +253,7 @@ the type and the return type of the function follows the argument list.
 (Go also has anonymous functions, but we aren't showing that yet.)
 
 Here we have the `rd_fun` to reading and print each of the tokens in the
-input file.  The variables `items` and `input` are local to the block,
+input file.  The variables `tokens` and `input` are local to the block,
 but `wordflag` is global.  Note the type of `infile`.
 
 ### Types and Methods
