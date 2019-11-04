@@ -1,13 +1,16 @@
 # Little Go Tutorial
 
+Web page version of this tutorial:
 [https://deculler.github.io/gotut/](https://deculler.github.io/gotut/)
 
-https://golang.org/doc/
+Reference documention for Go: [https://golang.org/doc/](https://golang.org/doc/)
 
-
-This tutorial is intended to introduce you to Go from the perspects of systems programming in C.
-Our goal is not to transliterate C into Go, but to utilize your understanding of C, its
-flexibility and its shortcomings, to help understand and appreciate how to approach Go.
+This tutorial is intended to introduce you to Go from the perspects of
+systems programming in C.  Our goal is not to transliterate C into Go,
+but to utilize your understanding of C, its flexibility and its
+shortcomings, to help understand and appreciate how to approach Go.
+To this end, our progressive example os the "word counting" exercise
+[used in CS162](https://cs162.eecs.berkeley.edu/static/hw/hw1.pdf).
 
 ## Getting Started - cmdln1
 
@@ -55,29 +58,35 @@ functionality, like files, directories, and processes.
 
 Like C, Go allows multiline comments bracketed by `/* */` and in-line comments with `//`.
 
-### Assignment and Types
+### Declaration, Assignment and Types
 
-Assignment is denoted `:=` as in Python, and tuple assignment is permitted, e.g.,
-`x, y := 2, 4`.
-
-Assignment implicitly declares the LHS variables, if they are not already
-declared.  The general form of a declaration optionally declares the type
+The general form of a declaration optionally declares the type
 and optionally the initial value.
 ```
 var <name> [<type>] [= <initial value>]
 ```
-Note here we are declaring its initial value with `=`, not performing
-an assignment.  Thus, we could have been explicit as follows, or left
+Actually, it is more general than what is shown here, as 
+the `var` statement can declare a list of variables, give them all
+types and initialize them.
+
+Within a function, a variable declaration and initialization
+can be in a short form using `:=`.  For example,
+```
+	argc := len(argv)
+```
+We could have been explicit as follows, or left
 off the `int` type.
 ```
 	var argc int = len(argv)
 ```
-The `var` statement declares a list of variables.  
 
 Where a variable is declared with an initial value, its type is
 inferred from that of the initializer.  Go utilizes type inference
 extensively.  It also allows types to be inspected.  In our example,
 we print the type of certain values with the `%T` format directives.
+
+Assignment of declared variables is denoted `=` and tuple assignment is permitted, e.g.,
+`x, y = 2, 4`.
 
 The [Basic Types](https://tour.golang.org/basics/11) in Go are similar to
 those you would find in `stdtypes.h`.  But there is the ambiguity of `char`
@@ -87,13 +96,13 @@ a Unicode code point and is an alias for `int32`.
 In Go, the type of a variable follows the variable name and is read left to right,
 the reverse of C. We see this with the `var` statement above.  But notice that
 `argv` is of type `[]string` - which could be read "array of strings".  Recall
-that in C we would declare
+that in C, `main` woul declare
 ```
-char **argv[];
+char *argv[];
 or
-char ***argv;
+char **argv;
 ```
-read "argv is an array of pointers to strings" - the type is right to left.
+read "argv is an array of pointers to strings" - the type is read right-to-left.
 
 ### Arrays and Slices
 
@@ -124,7 +133,7 @@ which you'll notice is its inferred type.  The size of the slice depends on how 
 command line arguments were passed in.  That's what `argc` was for.  We need to be able
 to write a general purpose `main` function that works for any number of args.  Thus,
 something outside of it needs to worry about the array that provided the storage
-allocation.  We are provided a slice.
+allocation.  We are provided a slice. Variable `argv` is a slice of strings.
 
 As in Python, a slice is formed by specifying two indices, a low and high bound,
 separated by a `:`, omitted bounds are treated as the origin and last.
@@ -187,7 +196,7 @@ expect.
 
 Our second example brings in basic IO operational concepts, along with some additional syntax
 and command line support.
-It can be found in [src/cmdln1/](https://github.com/deculler/gotut/tree/master/src/basicio).
+It can be found in [src/basicio/](https://github.com/deculler/gotut/tree/master/src/basicio).
 
 ### More on [`os`](https://golang.org/pkg/os)
 
@@ -230,13 +239,21 @@ It not only separates the flags from the args but produces a help output.
 Try `./basiocio -h`.
 
 In this example we are using the simplest functionality - setting the value
-of a variable if the `-words` flag is present.  This illustrates scoping
-in Go, as we have variables in the package in addition to functions.  Go has
-lexical scoping that is somewhat more general than C.  It is routine
-practice to declare variables in the scope of blocks, such as `for`, in
-a function, thereby minimizing the scope.  But, whether `wordflag` was global
-or declared within `main`, the `&` allows `flag.BoolVar` to set its value,
-since we have passed a reference.
+of a variable (`wordflag`) if the `-words` flag is present.  The
+declaration
+```
+var wordflag bool
+```
+illustrates scoping
+in Go, as we have variables in the package. in addition to functions.
+But note, outside of a function the short assignment declaration cannot be
+used.  Every statement begins with a keyword.
+
+Go has lexical scoping that is somewhat more general than C.  It is
+routine practice to declare variables in the scope of blocks, such as
+`for`, in a function, thereby minimizing the scope.  But, whether
+`wordflag` was global or declared within `main`, the `&` allows
+`flag.BoolVar` to set its value, since we have passed a reference.
 
 Another example is the p[`log`](https://golang.org/pkg/log/) package.
 Here we only use its printing functionality, while it exports a range

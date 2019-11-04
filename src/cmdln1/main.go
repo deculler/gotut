@@ -11,9 +11,10 @@ import ("os"
 
 func main() {
 	argv := os.Args    // Args is in the os package
-	var argc int = len(argv)  // argc is not special 
 	// argv is a slice of an array of strings.
 	// They are typed, with length and capacity
+
+	argc := len(argv)  // argc is not special 
 
 	fmt.Printf("ArgC: %d, Cmd: %s, argv type: %T and capacity: %d\n", argc,  argv[0],
 		argv, cap(argv))
