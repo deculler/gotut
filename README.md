@@ -12,17 +12,17 @@ shortcomings, to help understand and appreciate how to approach Go.
 To this end, our progressive example os the "word counting" exercise
 [used in CS162](https://cs162.eecs.berkeley.edu/static/hw/hw1.pdf).
 
-## Getting Started - cmdln1
+## Getting Started - cmdln
 
 Our first example deals with basic command line arguments to illustrate
 getting started in Go.  
-It can be found in [src/cmdln1/](https://github.com/deculler/gotut/tree/master/src/cmdln1).
+It can be found in [src/cmdln/](https://github.com/deculler/gotut/tree/master/src/cmdln).
 
 Although Go is a compiled language, rather than `cc` and `Makefiles`
 the process of building Go applications uses a set of file system conventions
-and the `go` utility.  To run this example, `cd` to the `cmdln1` directory
+and the `go` utility.  To run this example, `cd` to the `cmdln` directory
 and `go run main.go`.  Or you can build the executable with `go build`.
-Notice that it is `./cmdln1` in the current directory - taking its name from
+Notice that it is `./cmdln` in the current directory - taking its name from
 the source directory, not the main file.
 
 ### Packages
@@ -200,11 +200,16 @@ a directory there
 can add that to your `PATH` if you want to run what you build. `go clean` does what you'd
 expect.
 
-## High Level I/O - basicio
+## High Level I/O - words
 
 Our second example brings in basic IO operational concepts, along with some additional syntax
 and command line support.
 It can be found in [src/basicio/](https://github.com/deculler/gotut/tree/master/src/basicio).
+
+The file defining the package `main`, i.e., the command, is one exception
+to the name is last element of the path rule.  Notice that the `words` command
+is implemented in `words.go`
+
 
 ### More on [`os`](https://golang.org/pkg/os)
 
