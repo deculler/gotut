@@ -5,7 +5,8 @@ import (
 	"log"
 	"os"
 	"strings"
-	"wc"
+	wc "wc_s"
+	//wc "wc_l"
 )
 
 func isalpha(c byte) bool {
@@ -47,17 +48,18 @@ func main() {
 	args := os.Args
 	wordcounts := wc.NewWordCounts()
 	if len(args) == 1 {
-		countwords(os.Stdin, &wordcounts)
+		countwords(os.Stdin, wordcounts)
 	} else {
 		for _, name := range args[1:] {
 			f, err := os.Open(name)
 			if err != nil {
 				log.Println("Bad filename ", name)
 			} else {
-				countwords(f, &wordcounts)
+				countwords(f, wordcounts)
 				f.Close()
 			}
 		}
 	}
-	wordcounts.Print()
+	wordcounts.Sort()
+	wordcounts.Fprint(os.Stdout)
 }
