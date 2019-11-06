@@ -524,11 +524,73 @@ either extends the length within the current capacity or realloc's as needed. We
 can iterate over the slice with `range` (cf, `Fprint`) or with the index
 (cf `Find`) as desired.
 
-DO data interface and sort
+### Implementing an interface
 
-So the care of pointer and objects that arises in Find
+Given that our concrete representation of the collection of `WordCount` is
+a slice, we could easily pass the slice to the function in the
+[`sort` package](https://golang.org/pkg/sort/) for
+[sorting slices](https://golang.org/pkg/sort/#SliceStable), which
+achieves its polymorphism be receiving a `less` function to
+compare the particular elements.
+
+Alternatively, we can take care that `WordCounts` provides the methods that
+implement the "data interface" at `sort` relies upon:
+
+```
+type Interface interface {
+    // Len is the number of elements in the collection.
+    Len() int
+    // Less reports whether the element with
+    // index i should sort before the element with index j.
+    Less(i, j int) bool
+    // Swap swaps the elements with indexes i and j.
+    Swap(i, j int)
+}
+```
+
+These are trivial to implement on our concrete representation, since
+slice supports indexing.  And notice how the simultaneous assigment
+of multiple LHS is elegant.  
+By providing these, we can simply invoke `sort.Sort` on a object of
+type `WordCounts`.  The sort will invoke our methods as it performs
+its work.
+
+### Care in references
+
+Having extolled the virtues of Go idioms, it's time for a little
+cautionary note revealing how the kind of understanding what's going
+on that you develop in C help deal with obscure confusing things
+that might arise.  Note how the `Find` method takes care to iterate
+through the indeces of the `Wordcounts.wcs` slice and explictly
+creates the reference to the object in that slice,
+
+```
+var wc *WordCount = &(wcts.wcs[i])
+```
+rather than the `range` idiom
+
+```
+ for i, wc := range wcts.wcs {
+      	...
+        }
+```
+One might argues that this makes absolutely clear that `Find` returns
+a pointer to the `WordCount` object in the slice that matches in
+the `Word`.  And it does.  If you replace the loop with the
+one above, and `return &wc`
+you will discover that `AddWord` fails.  It obtains a pointer to an
+object that is a copy of the object in the slice.  `AddCount` will
+increment its `Count`, but the `WordCounts` is unchanged.
+
+The lesson here is even though higher level languages, like Go (and Python and Java)
+take the pain out of pointers, you still need to understand the nuances
+of objects, references to objects, copies of objects that are "equal"
+but not the same, and references to any of these.  Keep the concept of
+pointer in the back of your mind.
 
 ## List abstraction in Go - `wc_l`
+
+
 
 ## Threads (user level), Go Routines and Channels - `cwordct`
 
