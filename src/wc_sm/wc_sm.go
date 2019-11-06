@@ -85,7 +85,9 @@ func (wcts *WordCounts) Sort() {
 
 func NewWordCounts() *WordCounts {
 	/* Return an empty WordCounts */
-	return &WordCounts{[]WordCount{} }
+	wcts := new(WordCounts)
+	wcts.wcs = []WordCount{}
+	return wcts
 }
 
 
