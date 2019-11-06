@@ -15,6 +15,8 @@ import (
 	"sort"
 )
 
+// WordCount illustrates the basic definition of a type and set of methods on the type
+
 type WordCount struct {
 	Word string
 	Count int
@@ -31,6 +33,8 @@ func (wc *WordCount) Inc() {
 func (wc *WordCount) String() string {
 	return fmt.Sprintf("%8d : %s", wc.Count, wc.Word)
 }
+
+// WordCounts defines an abstract type whose implementation may vary
 
 type WordCounts struct {
 	wcs []WordCount

@@ -369,7 +369,19 @@ by implementing all the methods in the interface type with the appropriate signa
 Having something of an interface type does not tell you what it is, it tells
 you what it can do.
 
-## Buffered IO - `words/words.go`
+An assignment can include a [*type assertion*]
+(https://tour.golang.org/methods/15):
+```
+x := v.(T)
+```
+Asserts that the underlying value of `v` is of type `T` and assigns that value
+to `x`.  If not, it triggers a panic.  Or for programmatic control
+```
+x, ok := v.(T)
+```
+assigns a boolean to the second LHS of the type match. 
+
+## Storage Management and Buffered IO - `words/words.go`
 
 Our third example,
 [`words/words.go`](https://github.com/deculler/gotut/blob/master/src/words/words.go) illustrates
@@ -385,10 +397,14 @@ the latter for `uint32` - so you know the sizes of things.
 (Even `getc` is of type `int getc( FILE * stream);`)
 [A string value is a (possibly empty) sequence of bytes.](https://golang.org/ref/spec#String_types).
 
+### Dynamic storage allocation
+
 In our example, the function `words`, which returns a slice of strings, one for each
 "word" parsed from the file creates a `Reader` to access the file, rather than a `Scanner`.
 `Reader` allows us to do I/O like `fread` and `fwrite` in C, rather than `scanf` and `printf`
-which are akin to `Scanner` above.  In C we would need to either pass in a buffer to
+which are akin to `Scanner` above.
+
+In C we would need to either pass in a buffer to
 hold the data for the contents of the file, or explictly `malloc` each of the words
 and the object pointing to those strings, either a list or an array, which we would
 also need to `malloc` or `realloc`.  This is all simpler in Go.  We declare and
@@ -408,15 +424,6 @@ in place.  If not, the right thing still happens and you don't have to worry abo
 return this dynamically allocated slice of dynamically allocated strings, providing the
 most natural expression of what we are up to.
 
-The `getword` function declares its argument to be an `interface` - this could be any type
-that implements the `Reader` interface, i.e., provides all the methods associated with this
-interface.  The one we use here is `ReadByte`, which yields both a value and an err.  Here
-we have a very simple parser that skips over all non-alphabetic characters and collects the
-followeing sequence alphabetic characters (what we have chosen to call a "word").  Note
-that we simply form that with the append operator, `+` on strings.  But a `byte` is not
-a string of length 1.  We form a string out of it by using the type as the operator,
-`string(ch)`.
-
 Not that the return type of `getword` is `string`, not a pointer to something.  That's not
 too surprising if you think of a string as a pointer to a sequence of characters, rather than
 the object itself.  But in general, Go is fine with returning a value that is allocated locally
@@ -425,23 +432,108 @@ scope of its declaration, Go allocates it on the heap.  This means we can have c
 all those other powerful properties of modern languages, with the kind of direct mapping to the
 machine that make C so efficient.
 
+### IO Interfaces
 
+The `getword` function declares its argument to be an `interface` - this could be any type
+that implements the `Reader` interface, i.e., provides all the methods associated with this
+interface.  The one we use here is `ReadByte`, which yields both a value and an err.  Here
+we have a very simple parser that skips over all non-alphabetic characters and collects the
+following sequence alphabetic characters (what we have chosen to call a "word").  Note
+that we simply form that with the append operator, `+` on strings.  But a `byte` is not
+a string of length 1.  We form a string out of it by using the type as the operator,
+`string(ch)`.
 
-### Type assertions
+Common IO patterns are wrapped up as interfaces in the
+[`io`](https://golang.org/pkg/io/) package.  So the IO picture in Go is
+awfully nuanced, with `os`, `fmt`, `bufio`, and 'io` packages.
 
-Need interfaces before this
+## Data Structures and abstractions - `wordct`
 
-An assignment can include a [*type assertion*]
-(https://tour.golang.org/methods/15):
+The next stage in our expedition illustrates the formation of abstractions that
+can be used in various applications based on their external interface, independent
+of their internal representation.  [`wordct.go`](https://github.com/deculler/gotut/blob/master/src/wordct/wordct.go)
+builds a structure containing
+the number of occurences of each word in a collection of files using the abstraction
+provided in [`wc`](https://github.com/deculler/gotut/blob/master/src/wc_s/wc_s.go).
+In C, the wordcount interface would be represented in an include file `wc.h`,
+which was included in the main program allowing separate compilation.  That
+interface would be implemented in a `wc.c` file, based on a concrete representation.
+
+In Go we don't have the explicit separation of interface and implementation, partly
+because separate compilation is no longer and important goal.  The Go tool can
+look at the entire application in the build.  Each directory contains the set of
+files comprising a package, and applications using the package refer to it
+specifically and can only access the variables, functions and types that are
+explicitly exported (by using a capital first letter in the name).
+
+We want to explore multiple distinct concrete representations of the same
+abstraction, without changing the code that uses the abstraction.  In C,
+we might do this with changes to the Makefile.  In Go the build is driven
+by the layout of the workspace and the `import` statements.  So we have chosen
+to have two distinct packages, `wc_s` which uses a `slice` in the concrete
+representation of `WordCounts` and `wc_l` which uses the
+[`list`](https://golang.org/pkg/list/) that is analogous to the `list.h`
+used throughout Linux (and Pintos) to provide a polymorphic lists in C.
+The implementation used by the `main` package (in `wordct.go`) is
+specified by which of these packages is imported *and* we rename it to `wc`
+so none of the code changes when we change the implementation.  (Another
+way of achieving this would have been to create a symbolic link in `src`
+to one of the two implementations.)
+
+`wc_s.go` defines two types, `WordCount` and `WordCounts`.  The type and
+the struct go together; there is no need for the `typedef`.  The `WordCount`
+type and its fields, `Word` and `Count` are exported.  (Note, type in Go follows
+name - the reverse of C.)
+
+Three methods are defined on the `WordCount` type, `AddCount`, `Inc`, and `String`.
+Notice that all of them declare the same *special receiver* argument type,
+`*WordCount`.  Thus, as pointer to a `WordCount` acts like an object reference,
+upon which these three methods can be invoked.
+
+`WordCounts` is a more involved data structure that could have a variety of
+concrete representations - a collection of `Word`:`Count` bindings where we
+can introduce new words dynamically and increase their counts.
+
+In C, the most natural representation would be to introduce a field of
+type `*WordCount` in the struct for each entry with which to form a
+list.  The `WordCounts` analog would point to the head of the list.
+Entries can be easily added onto the front.  This is straigthforward,
+but any operations we might want to perform on the list, like sort,
+need to be reimplemented for this particular type of list.
+
+Alternatively, we could represent it as an array of pointers to `WordCount`
+with `WordCounts` being a pointer to the array.  When we added elements to it,
+we would need to `realloc` a larger array.  Since the array is just pointers and
+pointers are the same size, regardless of the type of the object they point
+to, we could use `(void *)` as the element type in polymorphic functions that we want
+to have operate on the array.  We would need to record the lenth of the array in
+the `WordCounts` struct, along with the pointer.  And if we wanted to expand it
+in chunks as new elements were added, could have another field in the struct,
+the size, or capicity, of the currently allocate block of storage under the array.
+
+In Go, the latter approach is naturally supported by the language, without all the
+rigamarole.  The
+representation is just a slice of `WordCount`, i.e., `[]WordCount`.  It doesn't have
+be `[]*WordCount`, although that would be another fine choice because the language
+understands the types of the objects.  The slice inherently has a `len` and a
+`cap`.  The operation in `AddWord`,
 ```
-x := v.(T)
+wcts.wcs = append(wcts.wcs, wc)
 ```
-Asserts that the underlying value of `v` is of type `T` and assigns that value
-to `x`.  If not, it triggers a panic.  Or for programmatic control
-```
-x, ok := v.(T)
-```
-assigns a boolean to the second LHS of the type match. 
+either extends the length within the current capacity or realloc's as needed. We
+can iterate over the slice with `range` (cf, `Fprint`) or with the index
+(cf `Find`) as desired.
+
+DO data interface and sort
+
+So the care of pointer and objects that arises in Find
+
+## List abstraction in Go - `wc_l`
+
+## Threads (user level), Go Routines and Channels - `cwordct`
+
+## Shared variables and mutext - `mwordct`
+
 
 
 
