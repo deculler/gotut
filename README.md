@@ -574,7 +574,7 @@ rather than the `range` idiom
       	...
         }
 ```
-One might argues that this makes absolutely clear that `Find` returns
+One might argue that this makes absolutely clear that `Find` returns
 a pointer to the `WordCount` object in the slice that matches in
 the `Word`.  And it does.  If you replace the loop with the
 one above, and `return &wc`
@@ -589,6 +589,28 @@ but not the same, and references to any of these.  Keep the concept of
 pointer in the back of your mind.
 
 ## List abstraction in Go - `wc_l`
+
+The `wc_l` package illustrates the discipline of ADTs with a concrete
+implementation of `WordCounts` that uses the [`list`](https://golang.org/pkg/list/)
+package.  `WordCount` type is unchanged as is the `WordCounts` "interface".
+(We could have formally defined this as a `type interface`, but we'll
+leave that as an exercise.)
+
+The Go `list` approach is different from the Linux (and Pintos) C macros.  Those
+embedded the list element (containing the pointers to next and prev)
+within the structs that are the values in the list.  Alternatively, a
+list of structs could be formed with a (void *) pointer to the objects in the
+list.  This is effectively what the Go list does, but it is better supported
+within the language.  Operating systems tend not to follow this approach
+because adding an element to a list involves allocating the pointer structure.
+In the embedded approach the objects that could potentially be placed on
+a list preallocate storage (within themselves) for the list structure.  (And
+those crazy C preprocessor macros provide a way to go from the list element
+to the list entry that surrounds it.)  In Go, the storage management is automatic,
+so the external approach is natural.
+
+
+
 
 
 
