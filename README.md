@@ -12,7 +12,7 @@ shortcomings, to help understand and appreciate how to approach Go.
 To this end, our progressive example os the "word counting" exercise
 [used in CS162](https://cs162.eecs.berkeley.edu/static/hw/hw1.pdf).
 
-## Getting Started - cmdln
+## Getting Started - `cmdln/main.go`
 
 Our first example deals with basic command line arguments to illustrate
 getting started in Go.  
@@ -200,7 +200,7 @@ a directory there
 can add that to your `PATH` if you want to run what you build. `go clean` does what you'd
 expect.
 
-## High Level I/O - words
+## High Level I/O - `basicio/main.go`
 
 Our second example brings in basic IO operational concepts, along with some additional syntax
 and command line support.
@@ -225,7 +225,16 @@ largely as you'd expect.  The type is opaque, it does not export members
 and the package provides a set of functions on objects of that type.  But
 note that these are not methods of a class, as in Java or Python.  Note also
 that the full package.Function is used to name the function.  We import the
-package into our namespace, but not its exports.
+package into our namespace, but we still refer to each of its exported
+variables and functions with the full `<package>.<symbol>`.
+
+`os` provides the highest level IO interface - [`os.Read`](https://golang.org/pkg/os/#File.Read)
+a file to yield a `[]byte` and [`os.Write`](https://golang.org/pkg/os/#File.Write) to
+write an `[]byte` in its entirety.  These and other methods on values of `File'
+type are accessible as methods on the type as indicated by their declaration.
+```
+func (f *File) Read(b []byte) (n int, err error)
+```
 
 ### Error handling
 
@@ -242,6 +251,23 @@ a pointer `p`, `*p` dereferences it - i.e., access the value that the
 pointer points to.  In lots of places where you might make errors in
 working with pointers Go will help you out and do the right thing -
 but it is good practice to get it right.
+
+You need to understand pointers - a reference to an object is not the same
+as the object itself.  (You send snail mail to an address, but it the
+address is not the house.  It would shelter you from the elements.)  In
+constructing data structures you  will have both objects and references
+to objects.  The big difference with respect to C is that pointers in
+Go are much more benign.  They are strongly type, they point to something,
+you can't do arithmetic on them.  You can store them and you can dereference them
+to get to the object they point to.
+
+The potentially confusing nuance in Go is that in refering to a field in a struct
+via a pointer to the struct you dereference it *implicitly*.  In C the
+messy syntax `(*p).field` is syntactically improved by using `p->field`, whereas
+generally `p.field` would be a type error - `p` is a pointer to a struct, not the
+struct itself.  In Go one does exactly that.  Instead of the messy `(*p).field`
+you are permitted to use `p.field`.  It is generally unambiguous, but can
+be at odds with systematic use of `p`, `*p` and `&p`.
 
 ### Useful packages: flag and log
 
@@ -343,7 +369,63 @@ by implementing all the methods in the interface type with the appropriate signa
 Having something of an interface type does not tell you what it is, it tells
 you what it can do.
 
-## more stuff
+## Buffered IO - `words/words.go`
+
+Our third example,
+[`words/words.go`](https://github.com/deculler/gotut/blob/master/src/words/words.go) illustrates
+other the richness of the Go storage model and medium level IO interfaces offered
+by [`bufio`](https://golang.org/pkg/bufio).  In this we have chosen to read the
+input file in a manner similar to C `getc` or `getchar`.  Partly, we have
+modernization.  In the days of C, characters fit in 8-bit bytes, period.  The only
+question was which character coding (ascii, or perhaps EBCDIC?).  But the world
+has moved on to Unicode, there are simply more than 256 charaters in the world.
+Go disinguishes between `byte` and `rune` - the first being an
+[alias](https://tour.golang.org/basics/11) for `uint8` and
+the latter for `uint32` - so you know the sizes of things.
+(Even `getc` is of type `int getc( FILE * stream);`)
+[A string value is a (possibly empty) sequence of bytes.](https://golang.org/ref/spec#String_types).
+
+In our example, the function `words`, which returns a slice of strings, one for each
+"word" parsed from the file creates a `Reader` to access the file, rather than a `Scanner`.
+`Reader` allows us to do I/O like `fread` and `fwrite` in C, rather than `scanf` and `printf`
+which are akin to `Scanner` above.  In C we would need to either pass in a buffer to
+hold the data for the contents of the file, or explictly `malloc` each of the words
+and the object pointing to those strings, either a list or an array, which we would
+also need to `malloc` or `realloc`.  This is all simpler in Go.  We declare and
+initialize `uwords` to be a slice backed by a dynamically allocated array and we
+give it a type, length, and initial capacity.  Here the empty string "", which
+is of length 0.  (String are well defined objects with length, not the dangerous
+null terminated business of C.)  The capacity here is an optimization.  We can go ahead and
+allocate enough space for the slice to grow.  If it doesn't exceed that, it wont need
+to reallocate itself.  But, either way, we grow the slice with the idiomatic
+```
+uwords = append(uwords, str)
+```
+This is really binding `uwords` to a new slice, whether it allocates more storage or not.  Go
+has automatic storage reclamation (Garbage collection), like Python and other modern languages
+so if `uwords` was the only reference to the old slice, it can all be efficiently modified
+in place.  If not, the right thing still happens and you don't have to worry about it.  We
+return this dynamically allocated slice of dynamically allocated strings, providing the
+most natural expression of what we are up to.
+
+The `getword` function declares its argument to be an `interface` - this could be any type
+that implements the `Reader` interface, i.e., provides all the methods associated with this
+interface.  The one we use here is `ReadByte`, which yields both a value and an err.  Here
+we have a very simple parser that skips over all non-alphabetic characters and collects the
+followeing sequence alphabetic characters (what we have chosen to call a "word").  Note
+that we simply form that with the append operator, `+` on strings.  But a `byte` is not
+a string of length 1.  We form a string out of it by using the type as the operator,
+`string(ch)`.
+
+Not that the return type of `getword` is `string`, not a pointer to something.  That's not
+too surprising if you think of a string as a pointer to a sequence of characters, rather than
+the object itself.  But in general, Go is fine with returning a value that is allocated locally
+to a function, what would be "on the stack" in C.  If the lifetime of the value exceed that of the
+scope of its declaration, Go allocates it on the heap.  This means we can have closures and
+all those other powerful properties of modern languages, with the kind of direct mapping to the
+machine that make C so efficient.
+
+
 
 ### Type assertions
 
