@@ -596,27 +596,210 @@ package.  `WordCount` type is unchanged as is the `WordCounts` "interface".
 (We could have formally defined this as a `type interface`, but we'll
 leave that as an exercise.)
 
-The Go `list` approach is different from the Linux (and Pintos) C macros.  Those
-embedded the list element (containing the pointers to next and prev)
-within the structs that are the values in the list.  Alternatively, a
-list of structs could be formed with a (void *) pointer to the objects in the
-list.  This is effectively what the Go list does, but it is better supported
-within the language.  Operating systems tend not to follow this approach
-because adding an element to a list involves allocating the pointer structure.
-In the embedded approach the objects that could potentially be placed on
-a list preallocate storage (within themselves) for the list structure.  (And
-those crazy C preprocessor macros provide a way to go from the list element
-to the list entry that surrounds it.)  In Go, the storage management is automatic,
-so the external approach is natural.
+The Go `list` approach is different from the Linux (and Pintos) *list* C macros.  Those
+embed the list element (containing the pointers to next and prev)
+within the structs that are the values in the list.
+Alternatively, a list of structs could be formed with a (void *)
+pointer to the objects in the list.  This is effectively what the Go
+list does, but it is better supported within the language.  Operating
+systems tend not to follow this approach because adding an element to
+a list involves allocating the pointer structure.  In the embedded
+approach the objects that could potentially be placed on a list
+preallocate storage (within themselves) for the list structure.  And
+those crazy C preprocessor macros provide a way to go from the list
+element to the list entry that surrounds it.
 
+In Go, storage management is automatic, so the external approach is
+natural.  The methods for traversing lists are quite similar, as
+illustrated in `Fprint`, as are the insertion methods, illustrated in
+`AddWord`.  Care must be exercised in creating the list, illustrated
+ in `NewWordCounbt.  In Go, the builtin `new` is used to allocate
+ an object of the specified type, initialized to zero.  Thus,
+ `new(WordCounts)` allocates storage for the list (whereas
+ `list.New()` would allocate a new list, initialize it and return
+ a pointer to it) but we need to invoke the `Init()` method on the
+ field of `list` type.
 
+We haven't entirely escaped the tyrany of `(void *)`.  Notice that in
+accessing the `Value` of the list element in `Fprint` and `Find` we need
+to explicitly declare its type to match that of the object that was passed to
+`PushFront` in `AddWord`.  This is a bit of a precarious vulnerability in
+Go's otherwise elegant type system.
 
+Many of the sophisticated methods available on the C list abstraction
+of Linux, such as ordered insertion, sort, and remove max, are missing
+in the Go `list`.  However, we can potentially gain those functions
+by implementing some basic interfaces.  To 
+use `sort` on our list representation of
+`WordCounts` we need to implement the data interface.  The
+key missing ingredient is the ability to index directly
+into a list.  We address this with the private `locate`
+method, which iterates down the list to locate the i-th element.
+Not that we return the `*list.Element`, not the `.Value`.  This is
+so that `swap` can exchange the values at two points in the list
+without changing the structure of the list.  Again, pay attention to
+pointers!
 
+With this building blocks, implenting the data interface for sort is
+straight forward.  The linear cost of `Less` and `Swap` may
+seriously compromise the complexity of `sort` (O(nlogn) comparisons,
+but they are not constant time), so it might be preferable to implement
+sort directly on the `list` type.
 
+### Go test
 
-## Threads (user level), Go Routines and Channels - `cwordct`
+Since this indexing business is pretty weird, we use the `go test` tools
+that are provided with the language to check it out.  Files with
+names that end in `_test` are not used in the build.  They are built and
+run by `go test` and can use the [`testing`](https://golang.org/pkg/testing/)
+package to perform unit tests.
+
+## Concurrency: Go Routines and Channels - `cwordct`
+
+A forte of Go is the user-level threads that are implemented fully within the language,
+called Go routines, rather than grafted on like `pthreads` in C.  This has many
+subtle implications for optimizating compilers that are beyond the scope of this
+tutorial, but importantly we don't have to sprinkle `volatile` decorators on
+variable types, as in C, to make very sublte bugs disappear.
+
+[`cwordct/wordct.go`](https://github.com/deculler/gotut/blob/master/src/cwordct/wordct.go)
+uses a separate Go routine to read and parse each of the input files.
+
+```
+go readwords(f, name, addr, rdone)
+```
+
+They all can
+be read in parallel.  The `go` operator preceeding a function call causes the invocation
+to run in its own (user-level) thread, i.e., concurrently with the parent thread
+and all others that have been spawned.  The thread exists upon completion of the
+function call.  Arguments are easily conveyed to the Go routine through the
+usual argument passing process, rather constructing a special structure and passing
+a function pointer to `pthread_create` as in C.  Go routines operate in a common address
+space, each with their own stack, but can access global variables and heap objects
+accessible through pointers.
+
+A second key innovation in Go is the use of *channels* to provide
+typed message passing - like commonly used for interprocess
+communication - among threads in a shared address space.  This
+provides for highly structured communication and coordination among
+threads, rather than relying on the inherently unstructured
+interactions of shared memory.  Clear and comprehensible
+communications structures via channels is a design problem, just as is
+the creation of data structures.  Here we illustrate two common patterns.
+
+To compute all the `WordCounts` we use a map-reduce approach.  Each `readwords`
+go routine is independent, reading and parsing a file to obtain a sequence
+of words.  The `adder` go routine accumulates all the word counts using
+whatever implementation of `WordCounts`.  The `addr` channel connects the
+maps to the reduce.  The `readwords` routines send word strings on the
+channel that was passed to them as an aergument:
+```
+ch_adder <- str
+```
+the `adder` routine receives all these string on the channel passed to it
+by iterating with range.
+```
+        for str := range ch_adder { // accumulate all the parsed words                    
+                wcounts.AddWord(str, 1)
+        }
+```
+The `range` operator terminates when the channel is closed.
+
+Go provides an explicit channel receive as well using the `<-` on the RHS, for example
+```
+x := <- c
+```
+but the structured `for ... range` idiom is preferred for stream communication.  Note
+the typed nature of channels is critical as it determines the "framing" of the
+communication.  Each send is a complete string, as is each receive.  Any type can
+be communicated over a channel.  Objects in their entirely are the basic units
+of communication.  And since all the threads are in the same address space, the
+communicated objects can freely include pointers to shared objects.
+
+Note that with this pattern no additional synchronization is needed to
+provide atomic updates to shared data structure.  Only `adder` modifies `WordCounts`.
+All the `readwords` are independent.  The only synchronization is the producer-consumer
+relationship that is naturally enforced by a channel - receive blocks until
+a corresponding send is performed.
+
+The second pattern deals with coordination, rather than data sharing.  It is a
+variant of the fork-join pattern, commonly implemented in C with
+pthread_exit/pthread_join.  Each of the Go routines are passed a `done` channel
+which they send on when they have completed their operation.  More generally, this
+could be the return value channel.  The parent thread recieves on this channel
+for every go routine it creates.  Thus, the construct:
+```
+                for i, _ := range args[1:] {
+                        n := <- rdone
+                        fmt.Println("Done: ", i, n)
+                }
+                close(addr)     // close the channel, terminating adder
+```
+detects the completion of all the `readwords`.  This implies that no further
+sends will occur on the `addr` channel.  The parent then closes the channel, causing
+`range` in `adder` to terminate once all the buffered sends have been received.
+Upon its completion, `adder` similarily conveys its completion to the parent with its
+`done` channel.
+
+Go provides considerable control over the buffering of a channel.  This can be used
+to provide "synchronous" send/receive message passing of CSP (concurrent sequential
+processes), asynchronous messaging passing, or various semaphore-like semantics.  But,
+those sophisticated mechanations are not necessary for most uses.
 
 ## Shared variables and mutext - `mwordct`
+
+A more conventional "shared memory" approach with Go routines is
+illustrated by ['mwordct/woordct.go`](https://github.com/deculler/gotut/blob/master/src/mwordct/wordct.go)
+with a synchronized variable of our
+slice-based `WordCounts` in ['wc_sm'](https://github.com/deculler/gotut/blob/master/src/wc_sm/wc_sm.go).
+
+Here the Go routine are a slightly modified variant of `countwords` that
+closes its input file after reading, if it is not reading from `os.Stdin`.  This is
+a bit of subtle change.  Previously our factoring was to have `main` deal
+with command line arguments and file opening/closing.  `countwords` just
+read an open file.  But we need to make sure the close happens after the file
+has been completely read.  When calling `countwords` as a function, `main` can
+close the file upon return.  Not so when each `countwords` is running concurrently
+with `main`.
+
+We have retained the use of channels for the fork/join pattern that allows `main`
+to detect completion of its go routines, before sorting and printing the results.
+Not that we could have done the `close` as part of the completion detection
+loop.  But, we would need to match the go routine completion with the correct
+`File`.  We could maintain a mapping for this purpose, or we could have defined
+the completion channel to be
+```
+rdone := make(chan *os.File)
+```
+and send the `infile` value back on the `done` channel.
+
+This takes care of the high level structure, but there remains the need for
+synchronization to provide mutual exclusion in modifying the shared
+`WordCounts`, since we have all the `countwords` invoking `wc.AddWord`.
+We have created a sychronized `wc` package by adding a mutex as a
+private field in the `WordCounts`.
+```
+type WordCounts struct {
+	mu sync.Mutex
+	wcs []WordCount
+}
+```
+We then use `Lock`/`Unlock` to create a critical section in `AddWord`.  Note
+that it might be wise to make `Find` a private method (i.e., `find`) since
+it cannot create a critical section and be called within the critical section
+of `AddWord`.
+
+Also, we are assuming that the construction phase of `WordCounts`
+does not overlap with the sorting and printing.  `Fprint` would not be a problem;
+if the slice were changed while we are iterating along it, we would just print the
+state of the `WordCounts` when we started.  But the data interface used in sorting
+is not synchronized and it is not clear that sort would work correctly if there
+were modifications during the sort.  We could obtain the lock in sort, but
+`Swap`, `Len`, and `Less` need to be exported for `sort.Sort` to access them,
+so they could not be synchronized.  The bulk synchronized view - cosntruction followed
+by sorting and rendering is both natural, simple, and predictable.
+
 
 
 

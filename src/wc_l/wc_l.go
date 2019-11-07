@@ -105,6 +105,5 @@ func NewWordCounts() *WordCounts {
 	/* Return an empty WordCounts */
 	wct := new(WordCounts)
 	wct.wcl.Init()
-	fmt.Printf("Len %d\n", wct.Len())
 	return wct
 }
