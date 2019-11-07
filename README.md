@@ -1,16 +1,18 @@
-# Little Go Tutorial
+# Introduction to Go - from a C in systems perspective
 
 Web page version of this tutorial:
 [https://deculler.github.io/gotut/](https://deculler.github.io/gotut/)
 
 Reference documention for Go: [https://golang.org/doc/](https://golang.org/doc/)
 
-This tutorial is intended to introduce you to Go from the perspects of
+This tutorial is intended to introduce you to Go from the perspective of
 systems programming in C.  Our goal is not to transliterate C into Go,
 but to utilize your understanding of C, its flexibility and its
 shortcomings, to help understand and appreciate how to approach Go.
 To this end, our progressive example os the "word counting" exercise
-[used in CS162](https://cs162.eecs.berkeley.edu/static/hw/hw1.pdf).
+[used in CS162](https://cs162.eecs.berkeley.edu/static/hw/hw1.pdf).  We build
+variants of this up step by step to illustrate essential comncepts in Go
+while putting them into action.
 
 ## Getting Started - `cmdln/main.go`
 
@@ -22,7 +24,7 @@ Although Go is a compiled language, rather than `cc` and `Makefiles`
 the process of building Go applications uses a set of file system conventions
 and the `go` utility.  To run this example, `cd` to the `cmdln` directory
 and `go run main.go`.  Or you can build the executable with `go build`.
-Notice that it is `./cmdln` in the current directory - taking its name from
+Notice that it builds `./cmdln` in the current directory - taking its name from
 the source directory, not the main file.
 
 ### Packages
@@ -48,7 +50,7 @@ The analog of `stdio.h` is the `fmt` package, which exports the
 `Printf` function used here.  Note capitalization in both, but not in the
 package name.
 
-Being effective in a language is the libraries as much as the language concepts,
+Being effective in a language is about the libraries as much as the language concepts,
 and these are two important ones.
 *[fmt package](https://golang.org/pkg/fmt/) provides formated printing and scanning.
 *[os package](https://golang.org/pkg/os/) provides platform independent operating system
@@ -57,6 +59,7 @@ functionality, like files, directories, and processes.
 ### Comments
 
 Like C, Go allows multiline comments bracketed by `/* */` and in-line comments with `//`.
+A Descriptive `/* */` should procede the package statement.
 
 ### Declaration, Assignment and Types
 
