@@ -223,7 +223,7 @@ handles are exported as variables, `os.Stdin`, 'os.Stdout', and 'os.Stderr`.
 Note caps.
 
 That package also introduces the `type File` and a set of functions that
-support that type, including `os.Open` and 'os.Close` which behave
+support that type, including `os.Open` and `os.Close` which behave
 largely as you'd expect.  The type is opaque, it does not export members
 and the package provides a set of functions on objects of that type.  But
 note that these are not methods of a class, as in Java or Python.  Note also
@@ -616,7 +616,7 @@ In Go, storage management is automatic, so the external approach is
 natural.  The methods for traversing lists are quite similar, as
 illustrated in `Fprint`, as are the insertion methods, illustrated in
 `AddWord`.  Care must be exercised in creating the list, illustrated
- in `NewWordCounbt.  In Go, the builtin `new` is used to allocate
+ in `NewWordCount`.  In Go, the builtin `new` is used to allocate
  an object of the specified type, initialized to zero.  Thus,
  `new(WordCounts)` allocates storage for the list (whereas
  `list.New()` would allocate a new list, initialize it and return
@@ -753,9 +753,11 @@ those sophisticated mechanations are not necessary for most uses.
 ## Shared variables and mutext - `mwordct`
 
 A more conventional "shared memory" approach with Go routines is
-illustrated by ['mwordct/woordct.go`](https://github.com/deculler/gotut/blob/master/src/mwordct/wordct.go)
+illustrated by
+[`mwordct/woordct.go`](https://github.com/deculler/gotut/blob/master/src/mwordct/wordct.go)
 with a synchronized variable of our
-slice-based `WordCounts` in ['wc_sm'](https://github.com/deculler/gotut/blob/master/src/wc_sm/wc_sm.go).
+slice-based `WordCounts` in
+[`wc_sm`](https://github.com/deculler/gotut/blob/master/src/wc_sm/wc_sm.go).
 
 Here the Go routine are a slightly modified variant of `countwords` that
 closes its input file after reading, if it is not reading from `os.Stdin`.  This is
