@@ -7,6 +7,7 @@ import (
 	"strings"
 	wc "wc_s"
 	//wc "wc_l"
+	//wc "wc_m"
 )
 
 func isalpha(c byte) bool {
