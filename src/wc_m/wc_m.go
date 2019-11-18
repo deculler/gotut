@@ -81,13 +81,9 @@ func (wcts *WordCounts) Find(word string) *WordCount {
 }
 
 func (wcts *WordCounts) AddWord(word string, count int) {
-	ct, ok := wcts.wcs[word]
-	if ok {
-		wcts.wcs[word] = ct + count
-	} else {
-		wcts.wcs[word] = count
-	}
+	wcts.wcs[word] += count
 }
+
 
 func (wcts *WordCounts) Sort() {
 	wcts.srt = true

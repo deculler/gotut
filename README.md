@@ -805,6 +805,82 @@ were modifications during the sort.  We could obtain the lock in sort, but
 so they could not be synchronized.  The bulk synchronized view - cosntruction followed
 by sorting and rendering is both natural, simple, and predictable.
 
+## Maps - `wc_m`
+
+One of the larger leaps coming to Go from C is the availability of
+a key:value data type, common in scripting languages, e.g.,
+`dict` in Python, associative arrays in
+PhP, etc., but in a compiled, systems oriented language.  Obviously,
+this relies on an dynamic storage model with automatic storage reclamation.
+
+[`wc_m/wc_m.go](https://github.com/deculler/gotut/blob/master/src/wc_m/wc_m.go)
+rebuilds our `wc` package using a map.
+
+Not how significantly the use of map changes the approach = perhaps enough that
+one would consider an very different ADT.  The `WordCounts` type no long even
+references `WordCount`.  There isn't an object with the key (`Word`) and the
+values (`Count`) in it.  They are simply in the map.
+
+Not that in creating the object (`NewWordCounts`) we have to take some care to
+initialize the map, but we also can preallocate storage for its growth.  We don't
+need to append to it.  An index assignment does the allocation - within the map or
+expanding as needed.
+
+### Nils and zeros
+
+Thus, `AddWord` becomes extremely simple.  The lookup is built in, so `Find` is
+unneccessary.  This simple construct is also subtle and deserves clarification.
+Note the difference with `Find` above.  If the key is not present in the map, indexing
+by the key will return the zero of the value type.  In this case, `int` 0.  Here
+that is just what we want.  If it exists and has a count, we add to it.  If not, we create
+the entry and initialize the count.
+
+In the `Find` just above, that is not the behavior we want.  It happens to be the case
+here that there would be no `word` appearing 0 times.  But, we are treating non-occurence
+differently.
+
+Note also that the behavior of this `Find` is subtly different from that in the
+others.  It does return a pointer to a `WordCount` with the `word` - but it does not
+return a pointer to THE `WordCount` that is in the `WordCounts`.  That aspect of
+behavior was not explicit in the interface.  The internal behavior was relied upon
+within the implementation of the ADT, e.g., `wc_l`.  Here we don't rely upon it and
+it also isn't present.
+
+### Ordering
+
+The concept of `sort` doesn't apply to maps.  They are unordered.  In our example
+we treated sort as an inplace operation that defined order.  But the only way that is
+visible is through `Fprint`.  So, here we record that the output shoudl be
+printed in sorted order. It do the sort, we export the `map` to a `slice`, which
+can then be sorted.
+
+We have not implemented the rest of the data interface, allowing this representation
+of `WordCounts` to be `sort.Sort`ed because swap would hardly make sense and
+in general `less` would be inefficient.
+
+
+### Anonymous functions, i.e., lambda
+
+The sort requires a `less` function that takes two indexes as arguments.  It doesn't
+take auxiliary inputs, such as the array that is being sorted, as is typical in C.
+But, Go provides a full capability to build closures, unlike C.  Here we define
+a `func` that carries the slice, `swc` in its environment.  Functions are first
+class objects, and we've used that here assigning the anonymous function to
+a variable, `wc_less`, but we could have just passed the `func(i,j)`
+expression in to `sort.Slice` without the variable.
+
+### Range return
+
+Note also in `Fprint` the two distinct uses of range.  `range` of a match
+provides the key and value of each element iteratively, whereas `range` of a slice
+provides index, value pairs.  This appropriate as the key of the map and the
+index of a slice function analogously.  A third use of `range` you saw previously
+with a channel.
+
+
+
+
+
 
 
 
